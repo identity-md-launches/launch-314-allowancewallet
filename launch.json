@@ -1,0 +1,22 @@
+{
+  "kind": "evm_project",
+  "token": {
+    "contract": "LaunchToken",
+    "name": "Pocket",
+    "symbol": "PCKT",
+    "decimals": 18
+  },
+  "pool": {
+    "pairedCurrency": "0x0000000000000000000000000000000000000000",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336"
+  },
+  "contracts": [
+    {
+      "contract": "AllowanceWallet",
+      "constructorArgs": ["$token"]
+    }
+  ],
+  "notes": "Pocket (PCKT) launch on Sepolia (11155111) through the IdentityMD ProjectFactory, described from the accepted tree at src/LaunchToken.sol and src/AllowanceWallet.sol.\n\nToken: LaunchToken is a plain OpenZeppelin ERC20 named Pocket, symbol PCKT, 18 decimals. Its no-argument constructor mints exactly 1,000,000,000 PCKT (10^27 minor units) to msg.sender, which at launch is the factory; the factory splits that supply between the ETH/PCKT pool and the MerkleDistributor. There is no owner, mint, burn hook, pause, blocklist, fee or upgrade path.\n\nApplication contract: AllowanceWallet (constructor: address token_) holds weekly PCKT pocket-money accounts between a parent and a child. Its single constructor argument is the launch token address, supplied as $token; the constructor rejects the zero address, stores the token as an immutable exposed by token(), and does not read msg.sender, so the factory acquires no role. The contract holds no PCKT at deploy and never needs a launch-token balance: users obtain PCKT by swapping Sepolia ETH in the launch pool. All payments in are approve + SafeERC20.safeTransferFrom; payouts are pull withdrawals to msg.sender only, checks-effects-interactions, nonReentrant. No owner, admin, pause or upgrade path; no payable function and no receive/fallback, so it never holds ETH; no DELEGATECALL, CALLCODE or SELFDESTRUCT. Because there is no privileged role, $owner is not used anywhere in this manifest. Windows are 7-day periods anchored at each account's opening timestamp; unspent allowance never rolls over; the parent may top up, change the allowance immediately or withdraw the balance at any time, so the allowance is a limit on the child, not a guarantee to the child.\n\nPool: no hook, paired against native ETH (zero address), fee 3000, tickSpacing 60. initialPrice is the sqrtPriceX96 for a 1:1 reference; the deployer derives the effective opening price from the pinned policy when it specifies initialMarketCapWei, so this value applies only under legacy policies. Supply, allocations, owner, chain id and policy version come from policy and the service pipeline, not from this manifest.\n\nDeployment order: LaunchToken, then AllowanceWallet with [$token]. No initialization calls are required after construction."
+}
